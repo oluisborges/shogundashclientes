@@ -42,10 +42,14 @@ export async function GET(request: Request) {
 
     console.log("[GET /api/agendamento/slots] Consultando tabelas...")
     
-    // Consulta bloqueios globais (admin)
-    const [windowRes, slotsRes] = await Promise.all([
+    // Consulta bloqueios globais (admin) e overrides de bloqueios padrão
+    const [windowRes, slotsRes, overridesRes] = await Promise.all([
       admin.from("booking_window_config").select("window_end").eq("target_month", monthStr).maybeSingle(),
+      admin.from("booking_blocked_slots").select("blocked_date, blocked_time, reason")
+        .gte("blocked_date", `${monthStr}-01`)
+        .lte("blocked_date", lastDate),
       admin.from("booking_blocked_slots").select("blocked_date, blocked_time")
+        .eq("reason", "DESBLOQUEIO_PADRAO")
         .gte("blocked_date", `${monthStr}-01`)
         .lte("blocked_date", lastDate),
     ])
@@ -57,11 +61,20 @@ export async function GET(request: Request) {
       slotsCount: slotsRes.data?.length 
     })
 
-    // Monta sets de bloqueio global
+    // Monta set de overrides (desbloqueios de horários padrão)
+    const allowedOverrides = new Set<string>()
+    for (const row of (overridesRes.data ?? [])) {
+      if (row.blocked_time) {
+        allowedOverrides.add(`${row.blocked_date}:${row.blocked_time}`)
+      }
+    }
+
+    // Monta sets de bloqueio global (excluindo overrides)
     const blockedFullDays = new Set<string>()
     const blockedTimeSlots = new Map<string, Set<string>>()
 
     for (const row of (slotsRes.data ?? [])) {
+      if (row.reason === "DESBLOQUEIO_PADRAO") continue
       if (!row.blocked_time) {
         blockedFullDays.add(row.blocked_date)
       } else {
@@ -110,7 +123,7 @@ export async function GET(request: Request) {
 
     console.log("[GET /api/agendamento/slots] Buscando slots no Google Calendar...")
     
-    const slots = await getAvailableSlots(year, month, blockedFullDays, blockedTimeSlots, windowEnd)
+    const slots = await getAvailableSlots(year, month, blockedFullDays, blockedTimeSlots, windowEnd, allowedOverrides)
     
     console.log("[GET /api/agendamento/slots] Slots encontrados:", slots.length)
     

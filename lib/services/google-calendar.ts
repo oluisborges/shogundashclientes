@@ -11,6 +11,22 @@ const MORNING_SLOTS   = ["10:00","11:00"]
 const AFTERNOON_SLOTS = ["14:00","15:00","16:00"]
 const WORKING_SLOTS   = [...MORNING_SLOTS, ...AFTERNOON_SLOTS]
 
+export { WORKING_SLOTS, MORNING_SLOTS, AFTERNOON_SLOTS }
+
+export function isDefaultBlocked(dayOfWeek: number, slot: string): boolean {
+  if (dayOfWeek === 1) return true
+  if (dayOfWeek === 2 && MORNING_SLOTS.includes(slot)) return true
+  return false
+}
+
+export function getSlotsForDay(dayOfWeek: number, allowedOverrides?: Set<string>, dateStr?: string): string[] {
+  return WORKING_SLOTS.filter(slot => {
+    if (!isDefaultBlocked(dayOfWeek, slot)) return true
+    if (allowedOverrides && dateStr && allowedOverrides.has(`${dateStr}:${slot}`)) return true
+    return false
+  })
+}
+
 const FIXED_ATTENDEES = ["leandrosamurait@gmail.com", "xluisborges@gmail.com"]
 const MARMITARIAS_ATTENDEE = "leo.gon.dacruz@gmail.com"
 
@@ -129,7 +145,8 @@ function getMockSlots(
   targetMonth: number,
   blockedFullDays: Set<string> = new Set(),
   blockedTimeSlots: Map<string, Set<string>> = new Map(),
-  windowEnd?: Date
+  windowEnd?: Date,
+  allowedOverrides: Set<string> = new Set()
 ): AvailableDay[] {
   const result: AvailableDay[] = []
   const lastDay = new Date(targetYear, targetMonth, 0).getDate()
@@ -143,9 +160,7 @@ function getMockSlots(
     if (blockedFullDays.has(dateStr)) continue
     if (windowEnd && date > windowEnd) continue
 
-    const daySlots = dayOfWeek === 1
-      ? WORKING_SLOTS.filter(slot => slot >= "11:00")
-      : WORKING_SLOTS
+    const daySlots = getSlotsForDay(dayOfWeek, allowedOverrides, dateStr)
 
     const slots: string[] = []
     for (const slot of daySlots) {
@@ -169,7 +184,8 @@ export async function getAvailableSlots(
   targetMonth: number,
   blockedFullDays: Set<string> = new Set(),
   blockedTimeSlots: Map<string, Set<string>> = new Map(),
-  windowEnd?: Date
+  windowEnd?: Date,
+  allowedOverrides: Set<string> = new Set()
 ): Promise<AvailableDay[]> {
   let auth: ReturnType<typeof getAuth> | undefined
   try {
@@ -177,7 +193,7 @@ export async function getAvailableSlots(
     auth = getAuth()
   } catch (err) {
     console.warn("[getAvailableSlots] Credenciais não configuradas, usando slots mockados para desenvolvimento")
-    return getMockSlots(targetYear, targetMonth, blockedFullDays, blockedTimeSlots, windowEnd)
+    return getMockSlots(targetYear, targetMonth, blockedFullDays, blockedTimeSlots, windowEnd, allowedOverrides)
   }
 
   const calendar = google.calendar({ version: "v3", auth })
@@ -239,9 +255,7 @@ export async function getAvailableSlots(
 
       const dayBlockedTimes = blockedTimeSlots.get(dateStr) ?? new Set<string>()
 
-      const dayWorkingSlots = dow === 1
-        ? WORKING_SLOTS.filter(slot => slot >= "11:00")
-        : WORKING_SLOTS
+      const dayWorkingSlots = getSlotsForDay(dow, allowedOverrides, dateStr)
 
       const now = new Date()
       const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000)

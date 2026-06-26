@@ -11,10 +11,15 @@ interface BlockedSlot {
   reason: string | null
 }
 
-const WORKING_SLOTS = [
-  "09:30","10:00","10:30","11:00","11:30",
-  "14:00","14:30","15:00","15:30","16:00","16:30",
-]
+const MORNING_SLOTS   = ["10:00","11:00"]
+const AFTERNOON_SLOTS = ["14:00","15:00","16:00"]
+const WORKING_SLOTS   = [...MORNING_SLOTS, ...AFTERNOON_SLOTS]
+
+function isDefaultBlocked(dayOfWeek: number, slot: string): boolean {
+  if (dayOfWeek === 1) return true
+  if (dayOfWeek === 2 && MORNING_SLOTS.includes(slot)) return true
+  return false
+}
 
 const DAYS_PT = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]
 const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
@@ -186,10 +191,12 @@ export default function GestorAgendaPage() {
     const d = new Date(year, month - 1, day)
     const dow = d.getDay()
     if (dow === 0 || dow === 6) return { bg: "#111F1A", border: "transparent", color: "#2a3d3a", cursor: "default" }
-    
+
     const dateStr = toDateStr(year, month, day)
     if (blockedFullDays.has(dateStr)) return { bg: "rgba(255,80,80,0.12)", border: "rgba(255,80,80,0.5)", color: "#ff6060", cursor: "pointer" }
     if ((blockedTimeMap.get(dateStr)?.size ?? 0) > 0) return { bg: "rgba(255,160,40,0.1)", border: "rgba(255,160,40,0.5)", color: "#ffa028", cursor: "pointer" }
+    if (dow === 1) return { bg: "rgba(100,120,180,0.08)", border: "rgba(100,120,180,0.3)", color: "#8090c0", cursor: "pointer" }
+    if (dow === 2) return { bg: "rgba(100,120,180,0.05)", border: "rgba(100,120,180,0.2)", color: "#90a0c0", cursor: "pointer" }
     return { bg: "rgba(149,214,0,0.06)", border: "rgba(149,214,0,0.25)", color: "#95D600", cursor: "pointer" }
   }
 
@@ -277,11 +284,12 @@ export default function GestorAgendaPage() {
         </div>
 
         {/* Legenda */}
-        <div className="flex items-center gap-4 text-xs font-[var(--font-display)] mb-4">
+        <div className="flex items-center gap-4 text-xs font-[var(--font-display)] mb-4 flex-wrap">
           {[
             { color: "rgba(149,214,0,0.4)", label: "Disponível" },
             { color: "rgba(255,80,80,0.5)", label: "Dia Bloqueado" },
             { color: "rgba(255,160,40,0.5)", label: "Horários Bloqueados" },
+            { color: "rgba(100,120,180,0.4)", label: "Padrão (Seg/Ter)" },
           ].map(({ color, label }) => (
             <span key={label} className="flex items-center gap-1.5 text-shogun-text-muted">
               <span className="inline-block w-3 h-3 rounded-sm" style={{ background: color }} />
@@ -340,6 +348,9 @@ export default function GestorAgendaPage() {
                         {blockedFullDays.has(dateStr) && <span className="text-[9px] font-[var(--font-display)]">Bloqueado</span>}
                         {!blockedFullDays.has(dateStr) && timeBlockCount > 0 && (
                           <span className="text-[9px] font-[var(--font-display)]">{timeBlockCount} bloq.</span>
+                        )}
+                        {!blockedFullDays.has(dateStr) && timeBlockCount === 0 && new Date(year, month - 1, day).getDay() === 1 && (
+                          <span className="text-[8px] font-[var(--font-display)]">Padrão</span>
                         )}
                       </button>
                     )
@@ -406,6 +417,8 @@ export default function GestorAgendaPage() {
                     <div className="grid grid-cols-3 gap-1.5">
                       {WORKING_SLOTS.map((slot) => {
                         const isBlocked = selTimeBlocked.has(slot)
+                        const dow = new Date(selectedDay + "T12:00:00").getDay()
+                        const isDefault = isDefaultBlocked(dow, slot)
                         return (
                           <button
                             key={slot}
@@ -414,10 +427,13 @@ export default function GestorAgendaPage() {
                             className="py-1.5 rounded text-[11px] font-[var(--font-data)] transition-all disabled:opacity-50 flex flex-col items-center leading-tight"
                             style={isBlocked
                               ? { background: "rgba(255,80,80,0.15)", border: "1px solid rgba(255,80,80,0.5)", color: "#ff6060" }
+                              : isDefault
+                              ? { background: "rgba(100,120,180,0.1)", border: "1px solid rgba(100,120,180,0.4)", color: "#8090c0" }
                               : { background: "rgba(149,214,0,0.05)", border: "1px solid #2A5040", color: "#6a9a70" }
                             }
                           >
                             <span>{slot}</span>
+                            {isDefault && !isBlocked && <span className="text-[8px] opacity-70">Padrão</span>}
                           </button>
                         )
                       })}
