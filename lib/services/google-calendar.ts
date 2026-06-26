@@ -7,8 +7,8 @@ const FREEBUSY_CALENDAR_ID = process.env.GOOGLE_FREEBUSY_CALENDAR_ID ?? CALENDAR
 
 const TZ = "America/Sao_Paulo"
 
-const MORNING_SLOTS   = ["09:30","10:00","10:30","11:00","11:30"]
-const AFTERNOON_SLOTS = ["14:00","14:30","15:00","15:30","16:00","16:30"]
+const MORNING_SLOTS   = ["10:00","11:00"]
+const AFTERNOON_SLOTS = ["14:00","15:00","16:00"]
 const WORKING_SLOTS   = [...MORNING_SLOTS, ...AFTERNOON_SLOTS]
 
 const FIXED_ATTENDEES = ["leandrosamurait@gmail.com", "xluisborges@gmail.com"]
@@ -210,7 +210,7 @@ export async function getAvailableSlots(
       const [h, m] = slot.split(":").map(Number)
       const slotStart = new Date(start)
       slotStart.setHours(h, m, 0, 0)
-      const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000)
+      const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000)
       if (slotStart < end && slotEnd > start) {
         const dateStr = slotStart.toISOString().split("T")[0]
         busySet.add(`${dateStr}T${slot}`)
@@ -286,7 +286,7 @@ export async function createCalendarEvent(params: CreateEventParams): Promise<st
   const { scheduledAt, clientName, businessName, niche, clientEmail, gestorEmail } = params
   const calendar = google.calendar({ version: "v3", auth })
 
-  const endAt = new Date(scheduledAt.getTime() + 30 * 60 * 1000)
+  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000)
 
   const dateFmt = scheduledAt.toLocaleDateString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric", timeZone: TZ,
@@ -314,7 +314,7 @@ Neste encontro revisamos:
 ---
 
 Data: ${dateFmt} às ${timeFmt}
-Duração: 30 minutos
+Duração: 60 minutos
 Frequência: Mensal`
 
   console.log("[createCalendarEvent] Criando evento:", { title, attendees: allAttendees.map(a => a.email) })

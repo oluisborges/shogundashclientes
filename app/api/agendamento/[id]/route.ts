@@ -61,21 +61,19 @@ export async function DELETE(
       .update({ status: "cancelled", updated_at: new Date().toISOString() })
       .eq("id", id)
 
-    // Se foi cancelado por admin, devolve o crédito ao cliente
-    if (isAdmin) {
-      const { data: creditClientData } = await adminClient
-        .from("clients")
-        .select("booking_credits, business_name")
-        .eq("id", booking.client_id)
-        .single()
+    // Devolve o crédito ao cliente (admin ou cliente cancelando)
+    const { data: creditClientData } = await adminClient
+      .from("clients")
+      .select("booking_credits, business_name")
+      .eq("id", booking.client_id)
+      .single()
 
-      if (creditClientData) {
-        await adminClient
-          .from("clients")
-          .update({ booking_credits: (creditClientData.booking_credits || 0) + 1 })
-          .eq("id", booking.client_id)
-        console.log("[cancel] Crédito devolvido ao cliente (cancelado por admin):", booking.client_id, "nome:", creditClientData.business_name)
-      }
+    if (creditClientData) {
+      await adminClient
+        .from("clients")
+        .update({ booking_credits: Math.min((creditClientData.booking_credits || 0) + 1, 2) })
+        .eq("id", booking.client_id)
+      console.log("[cancel] Crédito devolvido ao cliente:", booking.client_id, "nome:", creditClientData.business_name, "por:", isAdmin ? "admin" : "cliente")
     }
 
     // Libera o slot para outros clientes (usa horário local de São Paulo)

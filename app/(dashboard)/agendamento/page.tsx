@@ -294,7 +294,7 @@ export default function AgendamentoPage() {
                   {formatScheduledAt(myBooking.booking.scheduled_at)}
                 </p>
                 <p className="text-xs text-shogun-text-muted font-[var(--font-display)] mt-1">
-                  Duração: 30 minutos · Evento criado no Google Calendar do time
+                  Duração: 60 minutos · Evento criado no Google Calendar do time
                 </p>
               </div>
             </div>
