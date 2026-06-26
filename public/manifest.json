@@ -1,0 +1,15 @@
+{
+  "name": "Shogun Relatórios",
+  "short_name": "Shogun",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0b1a12",
+  "theme_color": "#0b1a12",
+  "icons": [
+    {
+      "src": "/shogunlogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

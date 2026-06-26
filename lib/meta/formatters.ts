@@ -1,0 +1,202 @@
+import type { MetaCampaign, MetaAdSet, MetaAd } from "@/types/meta"
+import type {
+  ParsedCampaignMetrics,
+  ParsedAdSetMetrics,
+  ParsedAdMetrics,
+  AggregatedMetrics,
+} from "./types"
+
+function getActionValue(
+  actions: Array<{ action_type: string; value: string }> | undefined,
+  actionType: string
+): number {
+  if (!actions) return 0
+  const action = actions.find((a) => a.action_type === actionType)
+  return action ? parseFloat(action.value) : 0
+}
+
+function getMessagingStarted(actions: Array<{ action_type: string; value: string }> | undefined): number {
+  return (
+    getActionValue(actions, "onsite_conversion.messaging_conversation_started_7d") ||
+    getActionValue(actions, "onsite_conversion.messaging_conversation_started") ||
+    getActionValue(actions, "messaging_conversation_started_7d") ||
+    getActionValue(actions, "messaging_conversation_started") ||
+    getActionValue(actions, "conversations_started") ||
+    getActionValue(actions, "conversations_started_7d")
+  )
+}
+
+function getMessagingReceived(actions: Array<{ action_type: string; value: string }> | undefined): number {
+  return (
+    getActionValue(actions, "onsite_conversion.messaging_first_reply") ||
+    getActionValue(actions, "messaging_first_reply") ||
+    getActionValue(actions, "messaging_first_reply_7d") ||
+    getActionValue(actions, "conversations_started") ||
+    getActionValue(actions, "conversations_started_7d")
+  )
+}
+
+export function parseCampaign(campaign: MetaCampaign): ParsedCampaignMetrics {
+  const insights = campaign.insights?.data?.[0]
+  const spend = insights ? parseFloat(insights.spend) : 0
+  const conversions = insights
+    ? getActionValue(insights.actions, "purchase")
+    : 0
+  const revenue = insights
+    ? getActionValue(insights.action_values, "purchase")
+    : 0
+  const landingPageViews = insights
+    ? getActionValue(insights.actions, "landing_page_view")
+    : 0
+  const reach = insights ? parseInt(insights.reach || '0') : 0
+  const menuConversionRate = landingPageViews > 0 
+    ? (conversions / landingPageViews) * 100 
+    : 0
+
+  const avgPurchaseValue = conversions > 0 ? revenue / conversions : 0
+
+  const messagesStarted = insights ? getMessagingStarted(insights.actions) : 0
+  const messagesReceived = insights ? getMessagingReceived(insights.actions) : 0
+
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    status: campaign.status,
+    objective: campaign.objective,
+    spend,
+    impressions: insights ? parseInt(insights.impressions) : 0,
+    clicks: insights ? parseInt(insights.clicks) : 0,
+    ctr: insights ? parseFloat(insights.ctr) : 0,
+    cpc: insights ? parseFloat(insights.cpc) : 0,
+    conversions,
+    revenue,
+    cpa: conversions > 0 ? spend / conversions : 0,
+    roas: spend > 0 ? revenue / spend : 0,
+    landingPageViews,
+    reach,
+    menuConversionRate,
+    avgPurchaseValue,
+    messagesStarted,
+    messagesReceived,
+  }
+}
+
+export function parseAdSet(adset: MetaAdSet): ParsedAdSetMetrics {
+  const insights = adset.insights?.data?.[0]
+  const spend = insights ? parseFloat(insights.spend) : 0
+  const conversions = insights
+    ? getActionValue(insights.actions, "purchase")
+    : 0
+  const revenue = insights
+    ? getActionValue(insights.action_values, "purchase")
+    : 0
+  const landingPageViews = insights
+    ? getActionValue(insights.actions, "landing_page_view")
+    : 0
+  const reach = insights ? parseInt(insights.reach || '0') : 0
+  const menuConversionRate = landingPageViews > 0 
+    ? (conversions / landingPageViews) * 100 
+    : 0
+
+  const avgPurchaseValue = conversions > 0 ? revenue / conversions : 0
+
+  const messagesStarted = insights ? getMessagingStarted(insights.actions) : 0
+  const messagesReceived = insights ? getMessagingReceived(insights.actions) : 0
+
+  return {
+    id: adset.id,
+    name: adset.name,
+    status: adset.status,
+    campaignId: adset.campaign_id,
+    campaignName: "",
+    dailyBudget: parseFloat(adset.daily_budget || "0"),
+    spend,
+    impressions: insights ? parseInt(insights.impressions) : 0,
+    clicks: insights ? parseInt(insights.clicks) : 0,
+    ctr: insights ? parseFloat(insights.ctr) : 0,
+    cpc: insights ? parseFloat(insights.cpc) : 0,
+    conversions,
+    revenue,
+    cpa: conversions > 0 ? spend / conversions : 0,
+    roas: spend > 0 ? revenue / spend : 0,
+    landingPageViews,
+    reach,
+    menuConversionRate,
+    avgPurchaseValue,
+    messagesStarted,
+    messagesReceived,
+  }
+}
+
+export function parseAd(ad: MetaAd): ParsedAdMetrics {
+  const insights = ad.insights?.data?.[0]
+  const spend = insights ? parseFloat(insights.spend) : 0
+  const conversions = insights
+    ? getActionValue(insights.actions, "purchase")
+    : 0
+  const revenue = insights
+    ? getActionValue(insights.action_values, "purchase")
+    : 0
+  const landingPageViews = insights
+    ? getActionValue(insights.actions, "landing_page_view")
+    : 0
+  const reach = insights ? parseInt(insights.reach || '0') : 0
+  const menuConversionRate = landingPageViews > 0 
+    ? (conversions / landingPageViews) * 100 
+    : 0
+
+  const avgPurchaseValue = conversions > 0 ? revenue / conversions : 0
+
+  const messagesStarted = insights ? getMessagingStarted(insights.actions) : 0
+  const messagesReceived = insights ? getMessagingReceived(insights.actions) : 0
+
+  return {
+    id: ad.id,
+    name: ad.name,
+    status: ad.status,
+    adsetId: ad.adset_id,
+    adsetName: "",
+    thumbnailUrl: ad.creative?.thumbnail_url ?? null,
+    imageUrl: ad.creative?.image_url ?? null,
+    creativeTitle: ad.creative?.title ?? null,
+    creativeBody: ad.creative?.body ?? null,
+    videoId: ad.creative?.video_id ?? null,
+    objectType: ad.creative?.object_type ?? null,
+    spend,
+    impressions: insights ? parseInt(insights.impressions) : 0,
+    clicks: insights ? parseInt(insights.clicks) : 0,
+    ctr: insights ? parseFloat(insights.ctr) : 0,
+    cpc: insights ? parseFloat(insights.cpc) : 0,
+    conversions,
+    revenue,
+    cpa: conversions > 0 ? spend / conversions : 0,
+    roas: spend > 0 ? revenue / spend : 0,
+    landingPageViews,
+    reach,
+    menuConversionRate,
+    avgPurchaseValue,
+    messagesStarted,
+    messagesReceived,
+  }
+}
+
+export function aggregateMetrics(
+  campaigns: ParsedCampaignMetrics[]
+): AggregatedMetrics {
+  const totalSpend = campaigns.reduce((sum, c) => sum + c.spend, 0)
+  const totalConversions = campaigns.reduce((sum, c) => sum + c.conversions, 0)
+  const totalRevenue = campaigns.reduce((sum, c) => sum + c.revenue, 0)
+  const totalImpressions = campaigns.reduce((sum, c) => sum + c.impressions, 0)
+  const totalClicks = campaigns.reduce((sum, c) => sum + c.clicks, 0)
+
+  return {
+    totalSpend,
+    totalConversions,
+    totalRevenue,
+    avgCpa: totalConversions > 0 ? totalSpend / totalConversions : 0,
+    avgRoas: totalSpend > 0 ? totalRevenue / totalSpend : 0,
+    totalImpressions,
+    totalClicks,
+    avgCtr: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0,
+  }
+}
