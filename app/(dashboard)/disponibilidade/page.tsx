@@ -703,6 +703,37 @@ export default function DisponibilidadePage() {
                       )
                     })}
                   </div>
+
+                  {/* Bloqueios de horários antigos/legados que não estão nos WORKING_SLOTS */}
+                  {(() => {
+                    const legacyBlocks = Array.from(selTimeBlocked.entries()).filter(([time]) => !WORKING_SLOTS.includes(time))
+                    if (legacyBlocks.length === 0) return null
+                    return (
+                      <div className="mt-2 pt-2 border-t border-shogun-border/30">
+                        <p className="text-[10px] font-[var(--font-display)] text-shogun-text-muted mb-1">Bloqueios legados (horários antigos)</p>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {legacyBlocks.map(([time, slot]) => (
+                            <button
+                              key={time}
+                              onClick={async () => {
+                                setSaving(true)
+                                try {
+                                  await fetch(`/api/admin/booking-config/${slot.id}`, { method: "DELETE" })
+                                  await loadConfig()
+                                } finally { setSaving(false) }
+                              }}
+                              disabled={saving}
+                              className="py-2 rounded text-[11px] font-[var(--font-data)] transition-all disabled:opacity-50 flex flex-col items-center"
+                              style={{ background: "rgba(255,80,80,0.15)", border: "1px solid rgba(255,80,80,0.5)", color: "#ff6060" }}
+                            >
+                              <span>{time}</span>
+                              <span className="text-[8px] font-[var(--font-display)] opacity-70">Remover</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </>
