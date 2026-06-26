@@ -69,8 +69,8 @@ export async function GET(request: Request) {
         : Promise.resolve({ data: [], error: null } as any),
     ])
 
-    const profilesMap = new Map((profilesRes.data ?? []).map((p: any) => [p.id, p]))
-    const clientsMap = new Map((clientsRes.data ?? []).map((c: any) => [c.id, c]))
+    const profilesMap = new Map<string, any>((profilesRes.data ?? []).map((p: any) => [p.id, p]))
+    const clientsMap = new Map<string, any>((clientsRes.data ?? []).map((c: any) => [c.id, c]))
 
     const formattedAccess = (access ?? []).map((item: any) => {
       const userData = profilesMap.get(item.user_id)

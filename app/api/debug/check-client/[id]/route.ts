@@ -4,10 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id
+    const { id: clientId } = await params
     console.log("=== DEBUG CHECK CLIENT ===")
     console.log("Client ID:", clientId)
     

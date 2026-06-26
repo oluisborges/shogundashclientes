@@ -28,7 +28,7 @@ export async function GET() {
     // Admins e moderadores veem todos os clientes ativos
     const { data: clients, error } = await adminClient
       .from("clients")
-      .select("id, business_name, meta_account_id")
+      .select("id, business_name, meta_account_id, gestor_id")
       .eq("active", true)
       .not("profile_id", "is", null)
       .order("business_name")
@@ -53,18 +53,18 @@ export async function GET() {
     // Clientes onde o usuário é o dono (profile_id)
     adminClient
       .from("clients")
-      .select("id, business_name, meta_account_id")
+      .select("id, business_name, meta_account_id, gestor_id")
       .eq("profile_id", user.id)
       .eq("active", true),
     // Clientes com acesso via user_client_access
     adminClient
       .from("user_client_access")
-      .select("client_id, clients(id, business_name, meta_account_id)")
+      .select("client_id, clients(id, business_name, meta_account_id, gestor_id)")
       .eq("user_id", user.id)
   ])
 
   // Combina os resultados removendo duplicatas por ID e por business_name
-  const clientsMap = new Map<string, { id: string; business_name: string; meta_account_id: string | null }>()
+  const clientsMap = new Map<string, { id: string; business_name: string; meta_account_id: string | null; gestor_id?: string | null }>()
   const businessNameSet = new Set<string>()
 
   // Adiciona clientes próprios
@@ -80,7 +80,7 @@ export async function GET() {
   // Adiciona clientes com acesso
   if (accessClientsResult.data) {
     for (const access of accessClientsResult.data) {
-      const clientData = access.clients as unknown as { id: string; business_name: string; meta_account_id: string | null } | null
+      const clientData = access.clients as unknown as { id: string; business_name: string; meta_account_id: string | null; gestor_id?: string | null } | null
       if (clientData && !businessNameSet.has(clientData.business_name)) {
         clientsMap.set(clientData.id, clientData)
         businessNameSet.add(clientData.business_name)

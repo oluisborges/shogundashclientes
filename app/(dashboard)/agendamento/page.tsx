@@ -72,7 +72,7 @@ function getTargetMonth() {
 }
 
 export default function AgendamentoPage() {
-  const { selectedClientId } = useClientContext()
+  const { selectedClientId, clients } = useClientContext()
   const [myBooking, setMyBooking] = useState<MyBookingData | null>(null)
   const [slotsData, setSlotsData] = useState<SlotsData | null>(null)
   const [selectedDay, setSelectedDay] = useState<AvailableDay | null>(null)
@@ -90,15 +90,22 @@ export default function AgendamentoPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setSuccess(null)
     try {
       // Usa o cliente selecionado se disponível
       const myBookingUrl = selectedClientId
         ? `/api/agendamento/my-booking?clientId=${selectedClientId}`
         : `/api/agendamento/my-booking`
 
+      const selectedClient = clients.find(c => c.id === selectedClientId)
+      const gestorId = selectedClient?.gestor_id
+      const slotsUrl = gestorId
+        ? `/api/agendamento/slots?year=${year}&month=${month}&gestor_id=${gestorId}`
+        : `/api/agendamento/slots?year=${year}&month=${month}`
+
       const [mbRes, slotsRes] = await Promise.all([
         fetch(myBookingUrl),
-        fetch(`/api/agendamento/slots?year=${year}&month=${month}`),
+        fetch(slotsUrl),
       ])
       
       // Só processa se a resposta for OK
@@ -124,7 +131,7 @@ export default function AgendamentoPage() {
     } finally {
       setLoading(false)
     }
-  }, [year, month, selectedClientId])
+  }, [year, month, selectedClientId, clients])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -147,6 +154,7 @@ export default function AgendamentoPage() {
         slot: `${selectedDay.date}T${selectedSlot}`,
         label: `${selectedDay.label} às ${selectedSlot}`,
       })
+      setSuccess(`Reunião agendada para ${selectedDay.label} às ${selectedSlot}. Evento criado no Google Calendar com todos os participantes.`)
       await loadData()
       setConfirming(false)
     } catch (e) {
@@ -227,6 +235,17 @@ export default function AgendamentoPage() {
           <span className="text-xs font-[var(--font-display)] text-shogun-text-muted">/ 2</span>
         </div>
       </div>
+
+      {/* Sucesso */}
+      {success && (
+        <div
+          className="flex items-center gap-3 p-4 rounded-xl"
+          style={{ background: "rgba(149,214,0,0.1)", border: "1px solid rgba(149,214,0,0.3)" }}
+        >
+          <CheckCircle size={16} style={{ color: "#95D600", flexShrink: 0 }} />
+          <p className="text-sm font-[var(--font-display)]" style={{ color: "#95D600" }}>{success}</p>
+        </div>
+      )}
 
       {/* Erro */}
       {error && (

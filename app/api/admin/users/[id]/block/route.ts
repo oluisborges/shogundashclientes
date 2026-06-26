@@ -5,9 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin"
 // POST /api/admin/users/[id]/block - bloqueia/desbloqueia um perfil
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: userId } = await params
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -15,7 +17,6 @@ export async function POST(
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    // Verifica se é admin ou moderador
     const admin = createAdminClient()
     const { data: profile } = await admin
       .from("profiles")
@@ -33,8 +34,6 @@ export async function POST(
     if (typeof blocked !== "boolean") {
       return NextResponse.json({ error: "blocked deve ser booleano" }, { status: 400 })
     }
-
-    const userId = params.id
 
     // Não permite bloquear outros admins
     if (blocked) {
