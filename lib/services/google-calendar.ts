@@ -258,7 +258,7 @@ export async function getAvailableSlots(
       const dayWorkingSlots = getSlotsForDay(dow, allowedOverrides, dateStr)
 
       const now = new Date()
-      const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000)
+      const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
       const availableSlots = dayWorkingSlots.filter(
         (slot) => {
@@ -268,7 +268,7 @@ export async function getAvailableSlots(
           const [h, m] = slot.split(":").map(Number)
           const slotDate = new Date(cur)
           slotDate.setHours(h, m, 0, 0)
-          return slotDate.getTime() >= twelveHoursFromNow.getTime()
+          return slotDate.getTime() >= twentyFourHoursFromNow.getTime()
         }
       )
 
@@ -300,7 +300,7 @@ export async function createCalendarEvent(params: CreateEventParams): Promise<st
   const { scheduledAt, clientName, businessName, niche, clientEmail, gestorEmail } = params
   const calendar = google.calendar({ version: "v3", auth })
 
-  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000)
+  const endAt = new Date(scheduledAt.getTime() + 30 * 60 * 1000)
 
   const dateFmt = scheduledAt.toLocaleDateString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric", timeZone: TZ,
@@ -328,7 +328,7 @@ Neste encontro revisamos:
 ---
 
 Data: ${dateFmt} às ${timeFmt}
-Duração: 60 minutos
+Duração: 30 minutos
 Frequência: Mensal`
 
   console.log("[createCalendarEvent] Criando evento:", { title, attendees: allAttendees.map(a => a.email) })
