@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const APP_VERSION = "2.2.4"
+const APP_VERSION = "2.2.5"
 
 // ─── Client nav (ordered as requested) ───────────────────────────────────────
 const CLIENT_NAV = [

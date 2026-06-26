@@ -343,6 +343,9 @@ Frequência: Mensal`
       start: { dateTime: scheduledAt.toISOString(), timeZone: TZ },
       end:   { dateTime: endAt.toISOString(),        timeZone: TZ },
       attendees:   allAttendees,
+      guestsCanModify: false,
+      guestsCanInviteOthers: false,
+      visibility: "default",
       conferenceData: {
         createRequest: {
           requestId:             uuidv4(),
